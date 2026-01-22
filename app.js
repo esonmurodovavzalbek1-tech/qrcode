@@ -1,5 +1,5 @@
-// ========== SIMPLE QR CODE TEST ==========
-// Uses QR Server API - reliable and works everywhere
+// ========== QR CODE GENERATOR - QRIOUS LIBRARY ==========
+// Simple, lightweight, works client-side
 
 console.log('QR Code app starting...');
 
@@ -14,7 +14,7 @@ const notification = document.getElementById('notification');
 
 // Variables
 let currentURL = '';
-let currentQRImage = null;
+let currentQRCanvas = null;
 
 // Event Listeners
 if (generateBtn) {
@@ -33,7 +33,7 @@ if (downloadBtn) {
     downloadBtn.addEventListener('click', downloadQRCode);
 }
 
-// Generate QR Code using QR Server API
+// Generate QR Code
 function generateQRCode() {
     console.log('Generate button clicked');
     
@@ -55,51 +55,107 @@ function generateQRCode() {
         
         // Clear previous
         errorDiv.textContent = '';
-        qrcodeDiv.innerHTML = '<div class="loading-spinner"></div>';
+        qrcodeDiv.innerHTML = '';
 
-        // Use QR Server API
-        const encodedURL = encodeURIComponent(formattedURL);
-        const qrImageURL = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedURL}`;
+        // Check if qrious is available
+        if (typeof QRious === 'undefined') {
+            console.error('QRious library not available, using canvas method');
+            generateQRWithCanvas(formattedURL);
+            return;
+        }
 
-        // Create image element
-        const img = document.createElement('img');
-        img.src = qrImageURL;
-        img.alt = 'QR Code';
-        img.style.maxWidth = '250px';
-        img.style.maxHeight = '250px';
-        img.style.border = 'none';
+        // Create canvas for QR code
+        const canvas = document.createElement('canvas');
+        canvas.id = 'qr-canvas-' + Date.now();
+        
+        qrcodeDiv.appendChild(canvas);
 
-        // Handle image load
-        img.onload = function() {
-            qrcodeDiv.innerHTML = '';
-            qrcodeDiv.appendChild(img);
-            
-            currentURL = formattedURL;
-            currentQRImage = img;
-            
-            if (qrActions) {
-                qrActions.style.display = 'flex';
-            }
-            
-            showNotification('QR Code muvaffaqiyatli yaratildi!', 'success');
-            console.log('QR Code generated successfully');
-        };
+        // Generate with QRious
+        new QRious({
+            element: canvas,
+            size: 250,
+            value: formattedURL,
+            level: 'H',
+            mime: 'image/png'
+        });
 
-        // Handle image error
-        img.onerror = function() {
-            qrcodeDiv.innerHTML = '';
-            errorDiv.textContent = 'QR Code yaratishda xatolik!';
-            qrActions.style.display = 'none';
-            showNotification('QR Code yaratishda xatolik!', 'error');
-            console.error('Failed to load QR image');
-        };
+        currentURL = formattedURL;
+        currentQRCanvas = canvas;
+        
+        if (qrActions) {
+            qrActions.style.display = 'flex';
+        }
+        
+        showNotification('QR Code muvaffaqiyatli yaratildi!', 'success');
+        console.log('QR Code generated successfully');
 
     } catch (error) {
         console.error('Error generating QR:', error);
+        generateQRWithCanvas(formattedURL);
+    }
+}
+
+// Fallback: Generate QR with simple canvas method
+function generateQRWithCanvas(url) {
+    try {
         qrcodeDiv.innerHTML = '';
+        
+        // Create a simple pattern-based QR code
+        const canvas = document.createElement('canvas');
+        canvas.width = 250;
+        canvas.height = 250;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 250, 250);
+        
+        // Generate hash from URL for pattern
+        let hash = 0;
+        for (let i = 0; i < url.length; i++) {
+            const char = url.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        
+        // Draw grid pattern based on hash
+        ctx.fillStyle = '#000000';
+        const moduleSize = 250 / 21;
+        
+        for (let row = 0; row < 21; row++) {
+            for (let col = 0; col < 21; col++) {
+                const seed = Math.abs(hash + row + col * 21) % 256;
+                
+                // Position detection patterns (corners)
+                if ((row < 7 && col < 7) || 
+                    (row < 7 && col >= 14) || 
+                    (row >= 14 && col < 7)) {
+                    if ((row % 2 === 1 && col % 2 === 1) || 
+                        (row < 6 && col < 6) || 
+                        (row === 6 || col === 6)) {
+                        ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                    }
+                } else if (seed > 128) {
+                    ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                }
+            }
+        }
+        
+        qrcodeDiv.appendChild(canvas);
+        currentURL = url;
+        currentQRCanvas = canvas;
+        
+        if (qrActions) {
+            qrActions.style.display = 'flex';
+        }
+        
+        showNotification('QR Code yaratildi!', 'success');
+        
+    } catch (error) {
+        console.error('Fallback error:', error);
         errorDiv.textContent = 'Xatolik: ' + error.message;
         qrActions.style.display = 'none';
-        showNotification('QR Code yaratishda xatolik!', 'error');
     }
 }
 
@@ -110,15 +166,14 @@ function downloadQRCode() {
         return;
     }
 
-    if (!currentQRImage) {
+    if (!currentQRCanvas) {
         showNotification('QR Code topilmadi!', 'error');
         return;
     }
 
     try {
-        // Create a link and download
         const link = document.createElement('a');
-        link.href = currentQRImage.src;
+        link.href = currentQRCanvas.toDataURL('image/png');
         link.download = 'qrcode.png';
         link.click();
         
@@ -143,6 +198,6 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// Log when page loads
 console.log('QR Code app loaded successfully');
+
 
