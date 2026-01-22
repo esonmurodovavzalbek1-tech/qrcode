@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="permissions-policy" content="geolocation=(), microphone=(), camera=()">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="QR Generator">
+    <title>QR Code Generator - Zamonaviy QR Ko'd Generatori</title>
+    <script src="qrcode-lib.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVJkEZSMUkrQ6usls8k/VsfCgMvYEs6F+mJZc8ljtfsxmcuMgWtp5NeKa+pfRvDxV5Z1qwS1JZQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="theme-toggle">
+        <button id="themeToggle" class="theme-btn" title="Tungi rejimni yoqish/o'chirish">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-qrcode"></i> QR Code Generator</h1>
+                <p>Zamonaviy va tez QR kod yaratuvchi</p>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <i class="fas fa-link input-icon"></i>
+                    <input 
+                        type="text" 
+                        id="urlInput" 
+                        placeholder="https://example.com"
+                        class="url-input"
+                        autocomplete="off"
+                    >
+                    <button id="clearInputBtn" class="clear-btn" style="display: none;" title="Tozalash">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <button id="generateBtn" class="btn btn-primary"><i class="fas fa-magic"></i> Ishlab Chiqar</button>
+            </div>
+            <div id="error" class="error"></div>
+            <div class="keyboard-hint">💡 Maslaha: Enter tugmasini bosing tez ishlab chiqarish uchun</div>
+        </div>
+
+        <div class="qr-settings" id="qrSettings" style="display: none;">
+            <div class="settings-group">
+                <label for="qrSize">QR Code Hajmi:</label>
+                <input type="range" id="qrSize" min="150" max="400" value="250" class="size-slider">
+                <span id="sizeValue">250px</span>
+            </div>
+            <div class="settings-group">
+                <label for="errorCorrection">Xatolik Tuzatish:</label>
+                <select id="errorCorrection" class="select-input">
+                    <option value="L">Kichik (7%)</option>
+                    <option value="M">O'rtacha (15%)</option>
+                    <option value="Q">Yaxshi (25%)</option>
+                    <option value="H" selected>Yuqori (30%)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="qr-section">
+                <div class="qr-header">
+                    <h2><i class="fas fa-qrcode"></i> QR Code</h2>
+                    <button id="settingsBtn" class="settings-toggle" title="Sozlamalar">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+                <div id="qrcode" class="qr-container">
+                    <div class="loading-spinner" style="display: none;"></div>
+                </div>
+                <div class="qr-actions" id="qrActions" style="display: none;">
+                    <button id="downloadBtn" class="btn btn-secondary" title="PNG formatida yuklab olish">
+                        <i class="fas fa-download"></i> Yuklab Ol
+                    </button>
+                    <button id="copyBtn" class="btn btn-secondary" title="Vaqtinchalik xotiraga nusxa qilish">
+                        <i class="fas fa-copy"></i> Nusxa
+                    </button>
+                    <button id="shareBtn" class="btn btn-secondary" title="Baham ko'rish">
+                        <i class="fas fa-share-alt"></i> Baham
+                    </button>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <div class="history-header">
+                    <h2><i class="fas fa-history"></i> Tarix</h2>
+                    <div class="history-search">
+                        <input type="text" id="searchHistory" placeholder="Qidirish..." class="search-input">
+                    </div>
+                </div>
+                <div class="history-controls">
+                    <button id="exportHistoryBtn" class="btn btn-info" title="Tarixni JSON sifatida yuklab olish">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button id="clearHistoryBtn" class="btn btn-danger" title="Hammasini o'chirish">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div id="historyList" class="history-list">
+                    <p class="empty-message"><i class="fas fa-folder-open"></i> Saqlangan narsalar yo'q</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="app.js"></script>
+    <script>
+        console.log('Page fully loaded');
+        console.log('QRCode:', typeof QRCode);
+    </script>
+</body>
+</html>
